@@ -26,13 +26,21 @@ def handle_calculate_IK(req):
         return -1
     else:
 
-        # Your FK code here
-        # Create symbols
-        #
-        #
+        # Create symb,ols
+        p0, p1, p2, p3, p4, p5, p6 = symbols('p0:7')
+        a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
+        d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
+        q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
+
         # Create Modified DH parameters
-        #
-        #
+        s = {p0: 0, a0: 0, d1: 0.75,
+             p1: -pi / 2, a1: 0.35, d2: 0,
+             p2: 0, a2: 1.25, q3: 0,
+             p3: -pi / 2, a3: -0.054, d4: 1.5,
+             p4: pi / 2, a4: 0, d5: 0,
+             p5: -pi / 2, a5: 0, d6: 0,
+             p6: 0, a6: 0, d7: 0.303}
+
         # Define Modified DH Transformation matrix
         #
         #
