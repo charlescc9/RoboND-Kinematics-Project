@@ -34,7 +34,7 @@ def handle_calculate_IK(req):
 
         # Create Modified DH parameters
         s = {alpha0: 0, a0: 0, d1: 0.75,
-             alpha1: -pi / 2, a1: 0.35, d2: 0,
+             alpha1: -pi / 2, a1: 0.35, d2: 0, q2: q2 - pi / 2,
              alpha2: 0, a2: 1.25, q3: 0,
              alpha3: -pi / 2, a3: -0.054, d4: 1.5,
              alpha4: pi / 2, a4: 0, d5: 0,
@@ -85,9 +85,18 @@ def handle_calculate_IK(req):
         T6_G = T6_G.subs(s)
 
         # Extract rotation matrices from the transformation matrices
-        #
-        #
-        ###
+        R_y = Matrix([[cos(-pi / 2), 0, sin(-pi / 2), 0],
+                      [0, 1, 0, 0],
+                      [-sin(-pi / 2), 0, cos(-pi / 2), 0],
+                      [0, 0, 0, 1]])
+        R_z = Matrix([[cos(pi), -sin(pi), 0, 0],
+                      [sin(pi), cos(pi), 0, 0],
+                      [0, 0, 1, 0],
+                      [0, 0, 0, 1]])
+        R = simplify(R_z * R_y)
+
+        # Transform from base link to gripper
+        T = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G * R)
 
         # Initialize service response
         joint_trajectory_list = []
