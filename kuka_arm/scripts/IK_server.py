@@ -42,6 +42,7 @@ def handle_calculate_IK(req):
         # Extract rotation matrices from the transformation matrices
         #
         #
+        ###
 
         # Initialize service response
         joint_trajectory_list = []
@@ -60,7 +61,7 @@ def handle_calculate_IK(req):
                 [req.poses[x].orientation.x, req.poses[x].orientation.y,
                  req.poses[x].orientation.z, req.poses[x].orientation.w])
 
-            ### Your IK code here
+            # Your IK code here
             # Compensate for rotation discrepancy between DH parameters and Gazebo
             #
             #
