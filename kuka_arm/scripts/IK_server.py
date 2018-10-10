@@ -35,7 +35,7 @@ def handle_calculate_IK(req):
         # Create Modified DH parameters
         s = {alpha0: 0, a0: 0, d1: 0.75,
              alpha1: -pi / 2, a1: 0.35, d2: 0, q2: q2 - pi / 2,
-             alpha2: 0, a2: 1.25, q3: 0,
+             alpha2: 0, a2: 1.25, d3: 0,
              alpha3: -pi / 2, a3: -0.054, d4: 1.5,
              alpha4: pi / 2, a4: 0, d5: 0,
              alpha5: -pi / 2, a5: 0, d6: 0,
