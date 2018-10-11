@@ -1,11 +1,14 @@
 from sympy import *
-import math
+from time import time
+
+start_time = time()
 
 # Define symbols
 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('p0:7')
 a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
 d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
 q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
+r, p, y = symbols('r, p, y')
 
 # Define DH parameters
 s = {alpha0: 0, a0: 0, d1: 0.75,
@@ -74,8 +77,7 @@ R_corr = simplify(R_z * R_y)
 T = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G * R_corr)
 
 # pprint(T)
-result = T.evalf(subs={q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0})
-# pprint(result)
+
 
 # cosine_for_pitch = math.sqrt(result[0, 0] ** 2 + result[1, 0] ** 2)
 # is_singular = cosine_for_pitch < 10**-6
@@ -92,49 +94,58 @@ result = T.evalf(subs={q1: 0, q2: 0, q3: 0, q4: 0, q5: 0, q6: 0})
 # print pitch
 # print yaw
 
-px = 0.1
-py = 0.2
-pz = 0.3
+px = 2.16135
+py = -1.42635
+pz = 1.55109
+roll = 1.6544359733
+pitch = 0.489909507153
+yaw = 0.0623921260626
 
-roll = 0.4
-pitch = 0.5
-yaw = 0.6
+# Rotation matrices
+R_x = Matrix([[1, 0, 0],
+              [0, cos(r), -sin(r)],
+              [0, sin(r), cos(r)]])
+R_y = Matrix([[cos(p), 0, sin(p)],
+              [0, 1, 0],
+              [-sin(p), 0, cos(p)]])
+R_z = Matrix([[cos(y), -sin(y), 0],
+              [sin(y), cos(y), 0],
+              [0, 0, 1]])
+R = R_z * R_y * R_x
+R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi / 2)
+R = R * R_corr
+R = R.subs({'r': roll, 'p': pitch, 'y': yaw})
 
+# Wrist position
+G = Matrix([[px],
+            [py],
+            [pz]])
+W = G - 0.303 * R[:, 2]
 
-R_x = Matrix([[1, 0, 0, 0],
-              [0, cos(roll), -sin(roll), 0],
-              [0, sin(roll), cos(roll), 0],
-              [0, 0, 0, 1]])
-R_y = Matrix([[cos(pitch), 0, sin(pitch), 0],
-              [0, 1, 0, 0],
-              [-sin(pitch), 0, cos(pitch), 0],
-              [0, 0, 0, 1]])
-R_z = Matrix([[cos(yaw), -sin(yaw), 0, 0],
-              [sin(yaw), cos(yaw), 0, 0],
-              [0, 0, 1, 0],
-              [0, 0, 0, 1]])
-R_rpy = R_z * R_y * R_x * R_corr
+# Joint angles 1 - 3
+A = 1.501
+B = sqrt(pow((sqrt(W[0] * W[0] + W[1] * W[1]) - 0.35), 2) + pow((W[2] - 0.75), 2))
+C = 1.25
+a = acos((B * B + C * C - A * A) / (2 * B * C))
+b = acos((A * A + C * C - B * B) / (2 * A * C))
+theta1 = atan2(W[1], W[0])
+theta2 = pi / 2 - a - atan2(W[2] - 0.75, sqrt(W[0] * W[0] + W[1] * W[1]) - 0.35)
+theta3 = pi / 2 - (b + 0.036)
 
-# pprint(R_rpy)
-
-wx = px - s[d7] * R_rpy[0, 2]
-wy = py - s[d7] * R_rpy[1, 2]
-wz = pz - s[d7] * R_rpy[2, 2]
-
-A = sqrt(s[d4] ** 2 + s[a3] ** 2)
-B = sqrt(wx ** 2 + wy ** 2 + (wz - s[d1]) ** 2)
-C = s[a2]
-b = acos((A ** 2 + C ** 2 - B ** 2) / 2 * A * C)
-theta1 = atan2(wy, wx)
-theta2 = atan2(sqrt(wx ** 2 + wy ** 2), wz - s[d1])
-theta3 = pi / 2 - b - atan2(abs(s[a3]), s[d4])
-
-R0_3 = T0_1 * T1_2 * T2_3
-R3_6 = simplify(R0_3.inv(method='LU') * R_rpy)
-pprint(R3_6)
-
+# Join angles 4 - 6
+R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3]
+R0_3 = R0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
+R3_6 = R0_3.inv("LU") * R
 theta4 = atan2(R3_6[2, 2], -R3_6[0, 2])
-theta5 = atan2(sqrt(R3_6[0, 2] ** 2 + R3_6[2, 2] ** 2), R3_6[1, 2])
+theta5 = atan2(sqrt(R3_6[0, 2] * R3_6[0, 2] + R3_6[2, 2] * R3_6[2, 2]), R3_6[1, 2])
 theta6 = atan2(-R3_6[1, 1], R3_6[1, 0])
 
-foo = 213
+print theta1
+print theta2
+print theta3
+print theta4
+print theta5
+print theta6
+result = T.evalf(subs={q1: theta1, q2: theta2, q3: theta3, q4: theta4, q5: theta5, q6: theta6})
+pprint(result)
+print ("\nTotal run time to calculate joint angles from pose is %04.4f seconds" % (time() - start_time))

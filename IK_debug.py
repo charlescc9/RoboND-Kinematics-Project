@@ -1,5 +1,6 @@
 from sympy import *
 from time import time
+import tf
 
 '''
 Format of test case is [ [[EE position],[EE orientation as quaternions]],[WC location],[joint angles]]
@@ -67,8 +68,12 @@ def test_code(test_case):
          req.poses[x].orientation.z, req.poses[x].orientation.w])
     start_time = time()
 
-    ########################################################################################
-    # Insert IK code here!
+    print px
+    print py
+    print pz
+    print roll
+    print pitch
+    print yaw
 
     # Symbols
     alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('p0:7')
@@ -87,35 +92,92 @@ def test_code(test_case):
                  alpha6: 0, a6: 0, d7: 0.303, q7: 0}
 
     # Transformation matrices
+    # def make_tf_matrix(alpha, a, d, q):
+    #     return Matrix([[cos(q), -sin(q), 0, a],
+    #                    [sin(q) * cos(alpha), cos(q) * cos(alpha), -sin(alpha), -sin(alpha) * d],
+    #                    [sin(q) * sin(alpha), cos(q) * sin(alpha), cos(alpha), cos(alpha) * d],
+    #                    [0, 0, 0, 1]]).subs(dh_params)
+    #
+    # T0_1 = make_tf_matrix(alpha0, a0, d1, q1).subs(dh_params)
+    # T1_2 = make_tf_matrix(alpha1, a1, d2, q2).subs(dh_params)
+    # T2_3 = make_tf_matrix(alpha2, a2, d3, q3).subs(dh_params)
+    # T3_4 = make_tf_matrix(alpha3, a3, d4, q4).subs(dh_params)
+    # T4_5 = make_tf_matrix(alpha4, a4, d5, q5).subs(dh_params)
+    # T5_6 = make_tf_matrix(alpha5, a5, d6, q6).subs(dh_params)
+    # T6_G = make_tf_matrix(alpha6, a6, d7, q7).subs(dh_params)
+
+    # T0_1 = Matrix([[cos(q1), -sin(q1), 0, a0],
+    #                [sin(q1) * cos(alpha0), cos(q1) * cos(alpha0), -sin(alpha0), -sin(alpha0) * d1],
+    #                [sin(q1) * sin(alpha0), cos(q1) * sin(alpha0), cos(alpha0), cos(alpha0) * d1],
+    #                [0, 0, 0, 1]]).subs(dh_params)
+    # T1_2 = Matrix([[cos(q2), -sin(q2), 0, a1],
+    #                [sin(q2) * cos(alpha1), cos(q2) * cos(alpha1), -sin(alpha1), -sin(alpha1) * d2],
+    #                [sin(q2) * sin(alpha1), cos(q2) * sin(alpha1), cos(alpha1), cos(alpha1) * d2],
+    #                [0, 0, 0, 1]]).subs(dh_params)
+    # T2_3 = Matrix([[cos(q3), -sin(q3), 0, a2],
+    #                [sin(q3) * cos(alpha2), cos(q3) * cos(alpha2), -sin(alpha2), -sin(alpha2) * d3],
+    #                [sin(q3) * sin(alpha2), cos(q3) * sin(alpha2), cos(alpha2), cos(alpha2) * d3],
+    #                [0, 0, 0, 1]]).subs(dh_params)
+    # T3_4 = Matrix([[cos(q4), -sin(q4), 0, a3],
+    #                [sin(q4) * cos(alpha3), cos(q4) * cos(alpha3), -sin(alpha3), -sin(alpha3) * d4],
+    #                [sin(q4) * sin(alpha3), cos(q4) * sin(alpha3), cos(alpha3), cos(alpha3) * d4],
+    #                [0, 0, 0, 1]]).subs(dh_params)
+    # T4_5 = Matrix([[cos(q5), -sin(q5), 0, a4],
+    #                [sin(q5) * cos(alpha4), cos(q5) * cos(alpha4), -sin(alpha4), -sin(alpha4) * d5],
+    #                [sin(q5) * sin(alpha4), cos(q5) * sin(alpha4), cos(alpha4), cos(alpha4) * d5],
+    #                [0, 0, 0, 1]]).subs(dh_params)
+    # T5_6 = Matrix([[cos(q6), -sin(q6), 0, a5],
+    #                [sin(q6) * cos(alpha5), cos(q6) * cos(alpha5), -sin(alpha5), -sin(alpha5) * d6],
+    #                [sin(q6) * sin(alpha5), cos(q6) * sin(alpha5), cos(alpha5), cos(alpha5) * d6],
+    #                [0, 0, 0, 1]]).subs(dh_params)
+    # T6_G = Matrix([[cos(q7), -sin(q7), 0, a6],
+    #                [sin(q7) * cos(alpha6), cos(q7) * cos(alpha6), -sin(alpha6), -sin(alpha6) * d7],
+    #                [sin(q7) * sin(alpha6), cos(q7) * sin(alpha6), cos(alpha6), cos(alpha6) * d7],
+    #                [0, 0, 0, 1]]).subs(dh_params)
+    # T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
+
+    # Define transformation matrices
     T0_1 = Matrix([[cos(q1), -sin(q1), 0, a0],
                    [sin(q1) * cos(alpha0), cos(q1) * cos(alpha0), -sin(alpha0), -sin(alpha0) * d1],
                    [sin(q1) * sin(alpha0), cos(q1) * sin(alpha0), cos(alpha0), cos(alpha0) * d1],
-                   [0, 0, 0, 1]]).subs(dh_params)
+                   [0, 0, 0, 1]])
+    T0_1 = T0_1.subs(dh_params)
+
     T1_2 = Matrix([[cos(q2), -sin(q2), 0, a1],
                    [sin(q2) * cos(alpha1), cos(q2) * cos(alpha1), -sin(alpha1), -sin(alpha1) * d2],
                    [sin(q2) * sin(alpha1), cos(q2) * sin(alpha1), cos(alpha1), cos(alpha1) * d2],
-                   [0, 0, 0, 1]]).subs(dh_params)
+                   [0, 0, 0, 1]])
+    T1_2 = T1_2.subs(dh_params)
+
     T2_3 = Matrix([[cos(q3), -sin(q3), 0, a2],
                    [sin(q3) * cos(alpha2), cos(q3) * cos(alpha2), -sin(alpha2), -sin(alpha2) * d3],
                    [sin(q3) * sin(alpha2), cos(q3) * sin(alpha2), cos(alpha2), cos(alpha2) * d3],
-                   [0, 0, 0, 1]]).subs(dh_params)
+                   [0, 0, 0, 1]])
+    T2_3 = T2_3.subs(dh_params)
+
     T3_4 = Matrix([[cos(q4), -sin(q4), 0, a3],
                    [sin(q4) * cos(alpha3), cos(q4) * cos(alpha3), -sin(alpha3), -sin(alpha3) * d4],
                    [sin(q4) * sin(alpha3), cos(q4) * sin(alpha3), cos(alpha3), cos(alpha3) * d4],
-                   [0, 0, 0, 1]]).subs(dh_params)
+                   [0, 0, 0, 1]])
+    T3_4 = T3_4.subs(dh_params)
+
     T4_5 = Matrix([[cos(q5), -sin(q5), 0, a4],
                    [sin(q5) * cos(alpha4), cos(q5) * cos(alpha4), -sin(alpha4), -sin(alpha4) * d5],
                    [sin(q5) * sin(alpha4), cos(q5) * sin(alpha4), cos(alpha4), cos(alpha4) * d5],
-                   [0, 0, 0, 1]]).subs(dh_params)
+                   [0, 0, 0, 1]])
+    T4_5 = T4_5.subs(dh_params)
+
     T5_6 = Matrix([[cos(q6), -sin(q6), 0, a5],
                    [sin(q6) * cos(alpha5), cos(q6) * cos(alpha5), -sin(alpha5), -sin(alpha5) * d6],
                    [sin(q6) * sin(alpha5), cos(q6) * sin(alpha5), cos(alpha5), cos(alpha5) * d6],
-                   [0, 0, 0, 1]]).subs(dh_params)
+                   [0, 0, 0, 1]])
+    T5_6 = T5_6.subs(dh_params)
+
     T6_G = Matrix([[cos(q7), -sin(q7), 0, a6],
                    [sin(q7) * cos(alpha6), cos(q7) * cos(alpha6), -sin(alpha6), -sin(alpha6) * d7],
                    [sin(q7) * sin(alpha6), cos(q7) * sin(alpha6), cos(alpha6), cos(alpha6) * d7],
-                   [0, 0, 0, 1]]).subs(dh_params)
-    T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
+                   [0, 0, 0, 1]])
+    T6_G = T6_G.subs(dh_params)
 
     # Rotation matrices
     R_x = Matrix([[1, 0, 0],
@@ -127,46 +189,74 @@ def test_code(test_case):
     R_z = Matrix([[cos(y), -sin(y), 0],
                   [sin(y), cos(y), 0],
                   [0, 0, 1]])
+    R = R_z * R_y * R_x
     R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi / 2)
-    R = R_z.subs(y, yaw) * R_y.subs(p, pitch) * R_x.subs(r, roll) * R_corr
+    R = R * R_corr
+    R = R.subs({'r': roll, 'p': pitch, 'y': yaw})
+
+    # # Wrist position
+    # wx = px - dh_params[d7] * R[0, 2]
+    # wy = py - dh_params[d7] * R[1, 2]
+    # wz = pz - dh_params[d7] * R[2, 2]
+    #
+    # # Joint angles 1 - 3
+    # A = sqrt(dh_params[d4] ** 2 + dh_params[a3] ** 2)
+    # B = sqrt((sqrt(wx ** 2 + wy ** 2) - dh_params[a1]) ** 2 + (wz - dh_params[d1]) ** 2)
+    # C = dh_params[a2]
+    # a = acos((B ** 2 + C ** 2 - A ** 2) / 2 * B * C)
+    # b = acos((A ** 2 + C ** 2 - B ** 2) / 2 * A * C)
+    # theta1 = atan2(wy, wx)
+    # theta2 = pi / 2 - a - atan2(wz - dh_params[d1], sqrt(wx ** 2 + wy ** 2) - dh_params[a1])
+    # theta3 = pi / 2 - b - atan2(abs(dh_params[a3]), dh_params[d4])
+    #
+    # # Join angles 4 - 6
+    # R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] *T2_3[0:3, 0:3]
+    # R0_3 = R0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
+    # R3_6 = R0_3.inv('LU') * R
+    # theta4 = atan2(R3_6[2, 2], -R3_6[0, 2])
+    # theta5 = atan2(sqrt(R3_6[0, 2] ** 2 + R3_6[2, 2] ** 2), R3_6[1, 2])
+    # theta6 = atan2(-R3_6[1, 1], R3_6[1, 0])
 
     # Wrist position
-    wx = px - dh_params[d7] * R[0, 2]
-    wy = py - dh_params[d7] * R[1, 2]
-    wz = pz - dh_params[d7] * R[2, 2]
+    G = Matrix([[px],
+                [py],
+                [pz]])
+    W = G - 0.303 * R[:, 2]
 
     # Joint angles 1 - 3
-    A = sqrt(dh_params[d4] ** 2 + dh_params[a3] ** 2)
-    B = sqrt((sqrt(wx ** 2 + wy ** 2) - dh_params[a1]) ** 2 + (wz - dh_params[d1]) ** 2)
-    C = dh_params[a2]
-    a = acos((B ** 2 + C ** 2 - A ** 2) / 2 * B * C)
-    b = acos((A ** 2 + C ** 2 - B ** 2) / 2 * A * C)
-    theta1 = atan2(wy, wx)
-    theta2 = pi / 2 - a - atan2(wz - dh_params[d1], sqrt(wx ** 2 + wy ** 2) - dh_params[a1])
-    theta3 = pi / 2 - b - atan2(abs(dh_params[a3]), dh_params[d4])
+    A = 1.501
+    B = sqrt(pow((sqrt(W[0] * W[0] + W[1] * W[1]) - 0.35), 2) + pow((W[2] - 0.75), 2))
+    C = 1.25
+    a = acos((B * B + C * C - A * A) / (2 * B * C))
+    b = acos((A * A + C * C - B * B) / (2 * A * C))
+    theta1 = atan2(W[1], W[0])
+    theta2 = pi / 2 - a - atan2(W[2] - 0.75, sqrt(W[0] * W[0] + W[1] * W[1]) - 0.35)
+    theta3 = pi / 2 - (b + 0.036)
 
     # Join angles 4 - 6
-    R0_3 = (T0_1 * T1_2 * T2_3).evalf(subs={q1: theta1, q2: theta2, q3: theta3})
-    R3_6 = R0_3.inv(method='LU') * R
+    R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3]
+    R0_3 = R0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
+    R3_6 = R0_3.inv("LU") * R
     theta4 = atan2(R3_6[2, 2], -R3_6[0, 2])
-    theta5 = atan2(sqrt(R3_6[0, 2] ** 2 + R3_6[2, 2] ** 2), R3_6[1, 2])
+    theta5 = atan2(sqrt(R3_6[0, 2] * R3_6[0, 2] + R3_6[2, 2] * R3_6[2, 2]), R3_6[1, 2])
     theta6 = atan2(-R3_6[1, 1], R3_6[1, 0])
 
-    ########################################################################################
+    print theta1
+    print theta2
+    print theta3
+    print theta4
+    print theta5
+    print theta6
 
-    ########################################################################################
-    # For additional debugging add your forward kinematics here. Use your previously calculated thetas
-    # as the input and output the position of your end effector as your_ee = [x,y,z]
 
-    # (OPTIONAL) YOUR CODE HERE!
+    your_wc = [W[0], W[1], W[2]]
 
-    # End your code input for forward kinematics here!
-    ########################################################################################
+    # WC and EE
+    # your_wc = [wx, wy, wz]
+    T0_G = T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G
 
-    # For error analysis please set the following variables of your WC location and EE location in the format of [x,y,z]
-    your_wc = [1, 1, 1]  # <--- Load your calculated WC values in this array
-    your_ee = [1, 1, 1]  # <--- Load your calculated end effector value from your forward kinematics
-    ########################################################################################
+    T0_G_eval = T0_G.evalf(subs={q1: theta1, q2: theta2, q3: theta3, q4: theta4, q5: theta5, q6: theta6})
+    your_ee = [T0_G_eval[0, 3], T0_G_eval[1, 3], T0_G_eval[2, 3]]
 
     # Error analysis
     print ("\nTotal run time to calculate joint angles from pose is %04.4f seconds" % (time() - start_time))
