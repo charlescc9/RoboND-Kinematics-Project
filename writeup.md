@@ -14,12 +14,12 @@ In this section, I derived the DH parameter table for use in the forward
 and inverse kinematics calculations. I accomplished this by first
 drawing a diagram of the robot KUKA KR210 and labeling all joints and
 links. I then defined a reference frame with Z and X axes
-for each join along with the gripper end effector. I chose the Z axes to
-point alone the joint axes, and the X axes normal to the Z axes. I
-placed most frame origins at the center of the corresponding joint,
-though with I placed joints 4 and 6 at joint 5,
-to allow for kinematic decoupling during inverse kinematics. I then
-calculated the alpha, a, d, and theta value for each frame using John
+for each joint along with the gripper end effector. I chose the Z axes to
+point along the joint axes, and the X axes to be normal to the Z axes. I
+placed most frame origins at the center of their corresponding joint,
+though I placed joints 4 and 6 coincident with joint 5,
+to allow for kinematic decoupling of the gripper end effector. I then
+calculated the alpha, a, d, and theta values for each frame using John
 J. Craig's modified DH convention.
 
 Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
@@ -37,16 +37,16 @@ Links | alpha(i-1) | a(i-1) | d(i-1) | theta(i)
 #### 2. Using the DH parameter table you derived earlier, create individual transformation matrices about each joint. In addition, also generate a generalized homogeneous transform between base_link and gripper_link using only end-effector(gripper) pose.
 
 In this section, I used the DH parameter table to create transform
-matrices between frames and a homogenous transform matrix around from
+matrices between adjacent frames and a homogenous transform matrix around from
 the base to the gripper end effector. I created these matrices using
-Sympy. For the frame transform matrices, I first defined the symbols:
+Sympy. For the DH transform matrices, I first defined the symbols:
 ```
 alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('p0:7')
 a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
 d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
 q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
 ```
-and DH parameter table:
+I then defined the DH parameter table:
 ```
 dh_params = {alpha0: 0, a0: 0, d1: 0.75,
              alpha1: -pi / 2, a1: 0.35, d2: 0, q2: q2 - pi / 2,
@@ -56,9 +56,9 @@ dh_params = {alpha0: 0, a0: 0, d1: 0.75,
              alpha5: -pi / 2, a5: 0, d6: 0,
              alpha6: 0, a6: 0, d7: 0.303, q7: 0}
 ```
-I then defined all the transform matrices between adjacent frames,
-again using John J. Craig's modified DH convention (and substituting in
-the corresponding values from the DH parameter table):
+I then defined all the transform matrices between adjacent frames, using
+John J. Craig's modified DH convention and substituting in
+the corresponding values from the DH parameter table:
 ```
     T0_1 = Matrix([[cos(q1), -sin(q1), 0, a0],
                    [sin(q1) * cos(alpha0), cos(q1) * cos(alpha0), -sin(alpha0), -sin(alpha0) * d1],
@@ -88,7 +88,6 @@ the corresponding values from the DH parameter table):
                    [sin(q7) * cos(alpha6), cos(q7) * cos(alpha6), -sin(alpha6), -sin(alpha6) * d7],
                    [sin(q7) * sin(alpha6), cos(q7) * sin(alpha6), cos(alpha6), cos(alpha6) * d7],
                    [0, 0, 0, 1]]).subs(dh_params)
-    T0_G_eval = T0_G.evalf(subs={q1: theta1, q2: theta2, q3: theta3, q4: theta4, q5: theta5, q6: theta6})
 ```
 Finally I created the complete DH transform matrix between the base and
 gripper end effector via subsequent matrix multiplications:
@@ -116,8 +115,8 @@ R_z = Matrix([[cos(y), -sin(y), 0],
 ```
 I then created a matrix to correct for the difference in orientation of
 the gripper end effector as described in the URDF description and the
-DH parameter table (a 180 degree rotation around the Z axis and -90
-degree around the Y axis):
+DH parameter table (a 180 degree rotation around the Z axis and a -90
+degree rotation around the Y axis):
 ```
 R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi / 2)
 ```
@@ -126,7 +125,7 @@ multiplications:
 ```
 R = R_z * R_y * R_x * R_corr
 ```
-This sufficed for the inverse kinematics calculations, but to obtain a
+This rotation matrix sufficed for the inverse kinematics calculations, but to obtain a
 complete homogeneous transform matrix, I also defined a translation
 column vector and added it to the rotation matrix (along with the
 bottom row):
@@ -143,9 +142,11 @@ In this part, I used inverse kinematics to calculate the joint angles
 (theta 1 - 6) given the gripper end effector position and orientation.
 Since I placed joints 4, 5, and 6 in intersecting reference frames, I
 was able to kinematic decouple the position and orientation of the
-gripper end effector. This allowed me to calculate the first three
-joint angles using the wrist position, which I was able to get from the
-gripper end effector by performing a rotation and translation:
+gripper end effector, splitting the problem into inverse position
+kinematics and inverse orientation kinematics. I used inverse position
+kinematics to calculate theta 1 - 3. To do this, I first calculated the
+wrist (reference frames 4, 5, and 6) positions by performing a rotation
+and translation from the gripper end effector:
 ```
 R = R.subs({'r': roll, 'p': pitch, 'y': yaw})
 wx = px - dh_params[d7] * R[0, 2]
@@ -167,7 +168,8 @@ theta3 = pi / 2 - b - round(atan2(abs(dh_params[a3]), dh_params[d4]), 3)
 
 ![alt text][image2]
 
-Finally, I was able to solve for theta 4 - 6 by setting the DH transform
+Finally, I was able to use inverse orientation kinematics to solve for
+theta 4 - 6. I accomplished this by first setting the DH transform
 matrix equal to the homogeneous transform matrix and multiplying both by
 the DH transform matrix for the first three joint angles and
 substituting the theta values found above. This gave the DH transform
