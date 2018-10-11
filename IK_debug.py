@@ -128,9 +128,9 @@ def test_code(test_case):
     R = R_z * R_y * R_x
     R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi / 2)
     R = R * R_corr
-    R = R.subs({'r': roll, 'p': pitch, 'y': yaw})
 
-    # # Wrist position
+    # Wrist position
+    R = R.subs({'r': roll, 'p': pitch, 'y': yaw})
     wx = px - dh_params[d7] * R[0, 2]
     wy = py - dh_params[d7] * R[1, 2]
     wz = pz - dh_params[d7] * R[2, 2]
@@ -146,7 +146,7 @@ def test_code(test_case):
     theta3 = pi / 2 - b - round(atan2(abs(dh_params[a3]), dh_params[d4]), 3)
 
     # Join angles 4 - 6
-    R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] *T2_3[0:3, 0:3]
+    R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3]
     R0_3 = R0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
     R3_6 = R0_3.inv('LU') * R
     theta4 = atan2(R3_6[2, 2], -R3_6[0, 2])
