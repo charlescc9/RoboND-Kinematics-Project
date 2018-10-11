@@ -26,13 +26,13 @@ def handle_calculate_IK(req):
         return -1
     else:
 
-        # Create symb,ols
+        # Define symbols
         alpha0, alpha1, alpha2, alpha3, alpha4, alpha5, alpha6 = symbols('p0:7')
         a0, a1, a2, a3, a4, a5, a6 = symbols('a0:7')
         d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
         q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
 
-        # Create Modified DH parameters
+        # Define DH parameters
         s = {alpha0: 0, a0: 0, d1: 0.75,
              alpha1: -pi / 2, a1: 0.35, d2: 0, q2: q2 - pi / 2,
              alpha2: 0, a2: 1.25, d3: 0,
@@ -41,7 +41,7 @@ def handle_calculate_IK(req):
              alpha5: -pi / 2, a5: 0, d6: 0,
              alpha6: 0, a6: 0, d7: 0.303, q7: 0}
 
-        # Create transformation matrices
+        # Define transformation matrices
         T0_1 = Matrix([[cos(q1), -sin(q1), 0, a0],
                        [sin(q1) * cos(alpha0), cos(q1) * cos(alpha0), -sin(alpha0), -sin(alpha0) * d1],
                        [sin(q1) * sin(alpha0), cos(q1) * sin(alpha0), cos(alpha0), cos(alpha0) * d1],
@@ -84,7 +84,7 @@ def handle_calculate_IK(req):
                        [0, 0, 0, 1]])
         T6_G = T6_G.subs(s)
 
-        # Extract rotation matrices from the transformation matrices
+        # Define gripper rotation matrices
         R_y = Matrix([[cos(-pi / 2), 0, sin(-pi / 2), 0],
                       [0, 1, 0, 0],
                       [-sin(-pi / 2), 0, cos(-pi / 2), 0],
@@ -93,10 +93,10 @@ def handle_calculate_IK(req):
                       [sin(pi), cos(pi), 0, 0],
                       [0, 0, 1, 0],
                       [0, 0, 0, 1]])
-        R = simplify(R_z * R_y)
+        R_corr = simplify(R_z * R_y)
 
-        # Transform from base link to gripper
-        T = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G * R)
+        # Define transform matrix from base link to gripper
+        T0_G = simplify(T0_1 * T1_2 * T2_3 * T3_4 * T4_5 * T5_6 * T6_G * R_corr)
 
         # Initialize service response
         joint_trajectory_list = []
@@ -120,9 +120,33 @@ def handle_calculate_IK(req):
             #
             #
             # Calculate joint angles using Geometric IK method
-            #
-            #
-            ###
+            R_x = Matrix([[1, 0, 0, 0],
+                          [0, cos(roll), -sin(roll), 0],
+                          [0, sin(roll), cos(roll), 0],
+                          [0, 0, 0, 1]])
+            R_y = Matrix([[cos(pitch), 0, sin(pitch), 0],
+                          [0, 1, 0, 0],
+                          [-sin(pitch), 0, cos(pitch), 0],
+                          [0, 0, 0, 1]])
+            R_z = Matrix([[cos(yaw), -sin(yaw), 0, 0],
+                          [sin(yaw), cos(yaw), 0, 0],
+                          [0, 0, 1, 0],
+                          [0, 0, 0, 1]])
+            R_rpy = R_z * R_y * R_x * R_corr
+
+            pprint(R_rpy)
+
+            nx = R_rpy[0, 2]
+            ny = R_rpy[1, 2]
+            nz = R_rpy[2, 2]
+
+            wx = px - 0.303 * nx
+            wy = py - 0.303 * nx
+            wz = pz - 0.303 * nx
+
+            theta1 = atan2(py, px)
+
+
 
             # Populate response for the IK request
             # In the next line replace theta1,theta2...,theta6 by your joint angle variables
