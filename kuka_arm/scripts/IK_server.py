@@ -32,6 +32,7 @@ def handle_calculate_IK(req):
         d1, d2, d3, d4, d5, d6, d7 = symbols('d1:8')
         q1, q2, q3, q4, q5, q6, q7 = symbols('q1:8')
         r, p, y = symbols('r, p, y')
+        p_x, p_y, p_z = symbols('p_x, p_y, p_z')
 
         # DH parameters
         dh_params = {alpha0: 0, a0: 0, d1: 0.75,
@@ -83,9 +84,12 @@ def handle_calculate_IK(req):
         R_z = Matrix([[cos(y), -sin(y), 0],
                       [sin(y), cos(y), 0],
                       [0, 0, 1]])
-        R = R_z * R_y * R_x
         R_corr = R_z.subs(y, pi) * R_y.subs(p, -pi / 2)
-        R = R * R_corr
+        R = R_z * R_y * R_x * R_corr
+        t = Matrix([[p_x],
+                    [p_y],
+                    [p_z]])
+        T0_G_homogeneous = R.col_insert(3, t).row_insert(3, Matrix([[0, 0, 0, 1]]))
 
         # Initialize service response
         joint_trajectory_list = []
