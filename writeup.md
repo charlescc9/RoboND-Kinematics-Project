@@ -145,7 +145,7 @@ was able to kinematic decouple the position and orientation of the
 gripper end effector, splitting the problem into inverse position
 kinematics and inverse orientation kinematics. I used inverse position
 kinematics to calculate theta 1 - 3. To do this, I first calculated the
-wrist (reference frames 4, 5, and 6) positions by performing a rotation
+wrist (reference frames 4, 5, and 6) position by performing a rotation
 and translation from the gripper end effector:
 ```
 R = R.subs({'r': roll, 'p': pitch, 'y': yaw})
@@ -174,7 +174,7 @@ matrix equal to the homogeneous transform matrix and multiplying both by
 the DH transform matrix for the first three joint angles and
 substituting the theta values found above. This gave the DH transform
 matrix for the last three theta values. I was then able to extract the
-euler angles for theta 4 - 6:
+euler angels to obtain the values for theta 4 - 6:
 ```
 R0_3 = T0_1[0:3, 0:3] * T1_2[0:3, 0:3] * T2_3[0:3, 0:3]
 R0_3 = R0_3.evalf(subs={q1: theta1, q2: theta2, q3: theta3})
@@ -188,7 +188,7 @@ theta6 = atan2(-R3_6[1, 1], R3_6[1, 0])
 
 #### 1. Fill in the `IK_server.py` file with properly commented python code for calculating Inverse Kinematics based on previously performed Kinematic Analysis. Your code must guide the robot to successfully complete 8/10 pick and place cycles. Briefly discuss the code you implemented and your results.
 
-In this section, I placed my developed code above into the IK_server.py
+In this section, I added my code to IK_server.py
 in order to calculate the KUKA KR210 inverse kinematics for the pick and
 place task. I first calculated the DH transform matrix and homogeneous
 transform matrix. I then iterated through the poses sent by rviz,
@@ -199,7 +199,7 @@ blue cylinder into the dropbox 9 out of 10 trials. That being said, I
 may have reached better accuracy through a more rigorous analysis of how
 to choose theta angles with more than one solution. My code also ran
 fairly quickly, roughly 0.5sec per pose, but optimization could have
-certainly improved performance.
+improved performance.
 ![alt text][image3]
 ![alt text][image4]
 
